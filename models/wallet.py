@@ -127,7 +127,7 @@ class Wallet:
             if not sock:
                 return False
                 
-            # Send transaction
+            sock.settimeout(5)
             tx = {
                 "type": "TRANSACTION",
                 "sender": self.owner,

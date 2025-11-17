@@ -1,6 +1,7 @@
 import hashlib
 import time
 import json
+from utils.constants import MINING_DIFFICULTY
 
 
 class Block:
@@ -44,14 +45,13 @@ class Block:
 
         return layer[0]
 
-    def mine_block(self, difficulty):
-        target = "0" * difficulty
-        while True:
-            self.hash = self.compute_hash()
-            if self.hash.startswith(target):
-                print(f"Block mined: {self.hash}")
-                break
+    def mine_block(self):
+        """Mine the block by finding a hash with the required difficulty."""
+        target = "0" * MINING_DIFFICULTY
+        while not self.hash.startswith(target):
             self.nonce += 1
+            self.hash = self.compute_hash()
+        print(f"Block mined: {self.hash}")
     
 
     def to_dict(self):

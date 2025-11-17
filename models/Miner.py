@@ -33,6 +33,16 @@ class Miner:
         self.register_to_bootstrap()
         threading.Thread(target=self.run_server, daemon=True).start()
         threading.Thread(target=self.maintain_miner_connections, daemon=True).start()
+        threading.Thread(target=self.auto_mine, daemon=True).start()
+
+    def auto_mine(self):
+        """Continuously attempt to mine blocks"""
+        while self.running:
+            time.sleep(5)  # Check every 5 seconds
+            with self.mempool_lock:
+                if len(self.mempool) >= TRANS_PER_BLOCK:
+                    threading.Thread(target=self.produce_block, daemon=True).start()
+      
 
     def connect_to_peers(self, miners_list):
         for m in miners_list:
@@ -253,11 +263,15 @@ class Miner:
                 print(f"[MINER {self.port}] Not enough transactions to mine a block")
                 return None
             selected_tx = [heapq.heappop(self.mempool) for _ in range(min(TRANS_PER_BLOCK, len(self.mempool)))]
+        
         new_block = Block(selected_tx, self.last_block_hash)
+        print(f"[MINER {self.port}] Mining block...")
+        new_block.mine_block()  # <-- ADD THIS LINE
+        
         self.blockchain.append(new_block)
         self.last_block_hash = new_block.hash
         self.broadcast_block(new_block)
-        print(f"[MINER {self.port}] Produced new block with {len(selected_tx)} transactions")
+        print(f"[MINER {self.port}] Produced new block with {len(selected_tx)} transactions, hash: {new_block.hash}")
         return new_block
 
     def add_block_to_chain(self, block_data):
@@ -320,3 +334,4 @@ class Miner:
                 sock.close()
             except:
                 pass
+        
