@@ -52,3 +52,26 @@ class Block:
                 print(f"Block mined: {self.hash}")
                 break
             self.nonce += 1
+    
+
+    def to_dict(self):
+        """Serialize the block for broadcasting."""
+        return {
+            "transactions": [tx.tx_to_dict() for tx in self.transactions],
+            "timestamp": self.timestamp,
+            "previous_hash": self.previous_hash,
+            "merkle_root": self.merkle_root,
+            "nonce": self.nonce,
+            "hash": self.hash
+        }
+
+    @staticmethod
+    def from_dict(data):
+        """Reconstruct a Block object from a dict."""
+        transactions = [Transaction.from_dict(tx) for tx in data["transactions"]]
+        block = Block(transactions, data["previous_hash"])
+        block.timestamp = data["timestamp"]
+        block.nonce = data["nonce"]
+        block.merkle_root = data["merkle_root"]
+        block.hash = data["hash"]
+        return block

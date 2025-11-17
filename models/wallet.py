@@ -15,7 +15,7 @@ class Wallet:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((host, port))
-                request = json.dumps({"type": "get_miners"}) + "\n"
+                request = json.dumps({"type": "GET_MINERS"}) + "\n"
                 s.sendall(request.encode())
 
                 data = ""
@@ -83,7 +83,7 @@ class Wallet:
                 return False
             
             if response.get("status") == "success":
-                self.balance = response.get("balance", 0)
+                self.balance +=response.get("balance", 0)
                 print(f"[WALLET] Updated balance for {self.owner}: {self.balance}")
                 sock.close()
                 return True

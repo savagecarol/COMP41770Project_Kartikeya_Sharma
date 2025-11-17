@@ -1,4 +1,3 @@
-# /Users/apple/Documents/ucd/blockchain/models/transaction.py
 class Transaction:
     def __init__(self, sender, receiver, transaction_fees, amount):
         self.__sender = sender
