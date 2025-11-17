@@ -20,12 +20,43 @@ def send_command_to_miner(command_json, miner_ip, miner_port):
         print(f"Error communicating with miner: {e}")
         return None
 
+def display_blockchain(blocks):
+    if not blocks:
+        print("Blockchain is empty")
+        return
+        
+    print(f"\nBlockchain ({len(blocks)} blocks):")
+    print("-" * 50)
+    for i, block in enumerate(blocks):
+        print(f"Block #{i}:")
+        print(f"  Hash: {block['hash'][:16]}...")
+        print(f"  Previous Hash: {block['previous_hash'][:16]}...")
+        print(f"  Timestamp: {block['timestamp']}")
+        print(f"  Nonce: {block['nonce']}")
+        print(f"  Merkle Root: {block['merkle_root'][:16]}...")
+        print(f"  Transactions ({len(block['transactions'])}):")
+        for j, tx in enumerate(block['transactions']):
+            print(f"    {j+1}. {tx['sender']} -> {tx['receiver']}: {tx['amount']} (Fee: {tx['transaction_fees']})")
+        print()
+
+def display_mempool(mempool):
+    if not mempool:
+        print("Mempool is empty")
+        return
+        
+    print(f"\nMempool ({len(mempool)} transactions):")
+    print("-" * 30)
+    for i, tx in enumerate(mempool):
+        print(f"{i+1}. {tx['sender']} -> {tx['receiver']}: {tx['amount']} (Fee: {tx['transaction_fees']})")
+    print()
+
 def main():
     print("\nClient console ready. Enter commands:")
     print("1: send transaction")
     print("2: show blockchain (from miner)")
     print("3: show mempool (from miner)")
-    print("4: exit\n")
+    print("4: check balance")
+    print("5: exit\n")
 
     while True:
         cmd = input("Enter command: ").strip()
@@ -34,20 +65,24 @@ def main():
             sender = input("Sender wallet name: ")
             receiver = input("Receiver wallet name: ")
             amount = float(input("Amount: "))
+            fee = float(input("Transaction fee: "))
 
             tx_command = {
                 "type": "TRANSACTION",
                 "sender": sender,
                 "receiver": receiver,
                 "amount": amount,
-                "fee": 0
+                "fee": fee
             }
 
             miner_ip = "127.0.0.1"
             miner_port = int(input("Miner port to send to: "))
 
             response = send_command_to_miner(tx_command, miner_ip, miner_port)
-            print("Miner response:", response)
+            if response:
+                print("Miner response:", response)
+            else:
+                print("Failed to communicate with miner")
 
         elif cmd == "2":
             miner_ip = "127.0.0.1"
@@ -56,7 +91,12 @@ def main():
             query_command = {"type": "GET_BLOCKCHAIN"}
 
             response = send_command_to_miner(query_command, miner_ip, miner_port)
-            print("Blockchain data:", response)
+            if response and response.get("status") == "success":
+                display_blockchain(response.get("blockchain", []))
+            elif response:
+                print("Error:", response)
+            else:
+                print("Failed to communicate with miner")
 
         elif cmd == "3":
             miner_ip = "127.0.0.1"
@@ -65,9 +105,32 @@ def main():
             query_command = {"type": "GET_MEMPOOL"}
 
             response = send_command_to_miner(query_command, miner_ip, miner_port)
-            print("Mempool data:", response)
+            if response and response.get("status") == "success":
+                display_mempool(response.get("mempool", []))
+            elif response:
+                print("Error:", response)
+            else:
+                print("Failed to communicate with miner")
 
         elif cmd == "4":
+            wallet_name = input("Wallet name: ")
+            miner_ip = "127.0.0.1"
+            miner_port = int(input("Miner port to query: "))
+
+            query_command = {
+                "type": "GET_BALANCE",
+                "wallet": wallet_name
+            }
+
+            response = send_command_to_miner(query_command, miner_ip, miner_port)
+            if response and response.get("status") == "success":
+                print(f"Balance for {wallet_name}: {response.get('balance', 0)}")
+            elif response:
+                print("Error:", response)
+            else:
+                print("Failed to communicate with miner")
+
+        elif cmd == "5":
             print("Exiting client.")
             break
 

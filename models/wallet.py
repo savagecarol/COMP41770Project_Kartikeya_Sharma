@@ -1,11 +1,14 @@
 import socket
 import random
 import json
+import time
 
 class Wallet:
-    def __init__(self, owner):
+    def __init__(self, owner,balance):
         self.owner = owner
         self.received_transactions = []
+        self.sent_transactions = []
+        self.balance = balance
         self.miners = []
 
     def connect_to_bootstrap(self, host, port):
@@ -42,10 +45,118 @@ class Wallet:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((miner["ip"], miner["port"]))
-            print(f"[WALLET] Connected to miner {miner['ip']}:{miner['port']}")
             return s
         except Exception as e:
             print(f"[WALLET ERROR] Could not connect to miner: {e}")
             return None
 
-    # ... rest of Wallet code here (add_transaction, wallet_loop, etc.) ...
+    def update_balance(self):
+        """Update wallet balance by querying a miner"""
+        miner = self.select_miner()
+        if not miner:
+            return False
+            
+        try:
+            sock = self.connect_to_miner(miner)
+            if not sock:
+                return False
+                
+            # Send connection type
+            sock.sendall(b"WALLET\n")
+            
+            # Send balance query
+            query = {
+                "type": "GET_BALANCE",
+                "wallet": self.owner
+            }
+            sock.sendall((json.dumps(query) + "\n").encode())
+            
+            # Receive response
+            data = sock.recv(4096).decode().strip()
+            response = json.loads(data)
+            
+            if response.get("status") == "success":
+                self.balance = response.get("balance", 0)
+                print(f"[WALLET] Updated balance for {self.owner}: {self.balance}")
+                sock.close()
+                return True
+            else:
+                print(f"[WALLET] Error getting balance: {response.get('message')}")
+                sock.close()
+                return False
+                
+        except Exception as e:
+            print(f"[WALLET ERROR] Updating balance: {e}")
+            try:
+                sock.close()
+            except:
+                pass
+            return False
+
+    def get_balance(self):
+        """Get current balance (with update)"""
+        self.update_balance()
+        return self.balance
+
+    def send_transaction(self, receiver, amount):
+        """Send a transaction to another wallet"""
+        if amount <= 0:
+            print("[WALLET] Amount must be positive")
+            return False
+            
+        # Update balance before sending
+        self.update_balance()
+        
+        if self.balance < amount:
+            print(f"[WALLET] Insufficient funds. Balance: {self.balance}, Amount: {amount}")
+            return False
+            
+        miner = self.select_miner()
+        if not miner:
+            return False
+            
+        try:
+            sock = self.connect_to_miner(miner)
+            if not sock:
+                return False
+                
+            # Send connection type
+            sock.sendall(b"WALLET\n")
+            
+            # Send transaction
+            tx = {
+                "type": "TRANSACTION",
+                "sender": self.owner,
+                "receiver": receiver,
+                "amount": amount,
+                "fee": 0
+            }
+            sock.sendall((json.dumps(tx) + "\n").encode())
+            
+            # Receive response
+            data = sock.recv(4096).decode().strip()
+            response = json.loads(data)
+            
+            if response.get("status") == "transaction_received":
+                # Update local records
+                self.sent_transactions.append({
+                    "receiver": receiver,
+                    "amount": amount,
+                    "timestamp": time.time()
+                })
+                self.balance -= amount
+                print(f"[WALLET] Transaction sent: {self.owner} -> {receiver}: {amount}")
+                sock.close()
+                return True
+            else:
+                print(f"[WALLET] Error sending transaction: {response.get('message')}")
+                sock.close()
+                return False
+                
+        except Exception as e:
+            print(f"[WALLET ERROR] Sending transaction: {e}")
+            try:
+                sock.close()
+            except:
+                pass
+            return False

@@ -1,3 +1,4 @@
+# /Users/apple/Documents/ucd/blockchain/models/transaction.py
 class Transaction:
     def __init__(self, sender, receiver, transaction_fees, amount):
         self.__sender = sender
@@ -20,7 +21,6 @@ class Transaction:
     @receiver.setter
     def receiver(self, value):
         self.__receiver = value
-
 
     @property
     def transaction_fees(self):
@@ -54,3 +54,24 @@ class Transaction:
             data["transaction_fees"],
             data["amount"]
         )
+
+    # Comparison methods for priority queue (higher fees = higher priority)
+    def __lt__(self, other):
+        # For priority queue: higher fees should come first, so we reverse the comparison
+        return self.transaction_fees > other.transaction_fees
+
+    def __gt__(self, other):
+        # For priority queue: higher fees should come first, so we reverse the comparison
+        return self.transaction_fees < other.transaction_fees
+
+    def __eq__(self, other):
+        return self.transaction_fees == other.transaction_fees
+
+    def __le__(self, other):
+        return self.__lt__(other) or self.__eq__(other)
+
+    def __ge__(self, other):
+        return self.__gt__(other) or self.__eq__(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

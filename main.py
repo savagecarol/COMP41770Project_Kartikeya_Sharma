@@ -23,7 +23,7 @@ def start_miners():
 def start_wallets():
     wallets = []
     for i in range(1, 6):
-        wallet = Wallet(f"Client{i}")
+        wallet = Wallet(f"Client{i}", 100)
         wallet.connect_to_bootstrap("127.0.0.1", 5500)
         wallets.append(wallet)
         print(f"[NODES] Wallet Client{i} started")
@@ -35,7 +35,7 @@ def start_mining_loop(miner):
             block = miner.produce_block()
             if block:
                 print(f"[NODES] Miner on port {miner.port} mined a block with hash: {block.hash}")
-            time.sleep(10)
+            time.sleep(5)  # Reduced sleep time to check more frequently
 
     threading.Thread(target=mining_loop, daemon=True).start()
 
