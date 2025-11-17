@@ -49,7 +49,6 @@ def run_nodes():
     for miner in miners:
         start_mining_loop(miner)
 
-    # Keep this script running
     while True:
         time.sleep(1)
 
