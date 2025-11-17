@@ -43,18 +43,23 @@ class Miner:
 
         while self.running:
             client_socket, addr = self.server_socket.accept()
-            connection_type = client_socket.recv(1024).decode().strip()
-            if connection_type == "WALLET":
-                self.wallet_connections.append(client_socket)
-                threading.Thread(target=self.handle_wallet, args=(client_socket,), daemon=True).start()
-                print(f"[MINER] Wallet connected from {addr}")
-            elif connection_type == "MINER":
-                self.miner_connections.append(client_socket)
-                threading.Thread(target=self.handle_miner, args=(client_socket,), daemon=True).start()
-                print(f"[MINER] Miner connected from {addr}")
-            else:
+            try:
+                connection_type = client_socket.recv(1024).decode().strip()
+                print(f"[MINER] Received connection type: {connection_type} from {addr}")
+                if connection_type == "WALLET":
+                    self.wallet_connections.append(client_socket)
+                    threading.Thread(target=self.handle_wallet, args=(client_socket,), daemon=True).start()
+                    print(f"[MINER] Wallet connected from {addr}")
+                elif connection_type == "MINER":
+                    self.miner_connections.append(client_socket)
+                    threading.Thread(target=self.handle_miner, args=(client_socket,), daemon=True).start()
+                    print(f"[MINER] Miner connected from {addr}")
+                else:
+                    print(f"[MINER] Unknown connection type from {addr}, closed")
+                    client_socket.close()
+            except Exception as e:
+                print(f"[MINER ERROR] Error handling connection from {addr}: {e}")
                 client_socket.close()
-                print(f"[MINER] Unknown connection type from {addr}, closed")
 
     def register_to_bootstrap(self):
         try:
@@ -133,66 +138,77 @@ class Miner:
 
     def handle_wallet(self, wallet_socket):
         try:
-            data = wallet_socket.recv(4096)
-            if not data:
+            # Receive and validate the connection type
+            connection_type = wallet_socket.recv(1024).decode().strip()
+            print(f"[MINER] Received connection type: {connection_type}")
+            if connection_type != "WALLET":
+                print(f"[MINER] Unknown connection type from wallet, closing connection")
                 wallet_socket.close()
                 return
-                
-            request_json = data.decode().strip()
-            try:
-                request = json.loads(request_json)
-            except json.JSONDecodeError:
-                response = {"status": "error", "message": "Invalid JSON"}
-                wallet_socket.sendall((json.dumps(response) + "\n").encode())
-                wallet_socket.close()
-                return
-                
-            # Handle different request types
-            if request.get("type") == "TRANSACTION":
-                self.add_transaction_to_mempool(request_json)
-                self.broadcast_transaction(request_json, exclude_socket=wallet_socket)
-                response = {"status": "transaction_received"}
-                
-            elif request.get("type") == "GET_BLOCKCHAIN":
-                # Return blockchain data
-                blockchain_data = []
-                for block in self.blockchain:
-                    block_data = {
-                        "transactions": [tx.tx_to_dict() for tx in block.transactions],
-                        "timestamp": block.timestamp,
-                        "previous_hash": block.previous_hash,
-                        "merkle_root": block.merkle_root,
-                        "nonce": block.nonce,
-                        "hash": block.hash
-                    }
-                    blockchain_data.append(block_data)
-                response = {"status": "success", "blockchain": blockchain_data}
-                
-            elif request.get("type") == "GET_MEMPOOL":
-                # Return mempool data (sorted by fees, highest first)
-                with self.mempool_lock:
-                    sorted_mempool = sorted(self.mempool, reverse=True)  # Highest fees first
-                    mempool_data = [tx.tx_to_dict() for tx in sorted_mempool]
-                response = {"status": "success", "mempool": mempool_data}
-                
-            elif request.get("type") == "GET_BALANCE":
-                # Calculate balance for wallet
-                wallet_name = request.get("wallet")
-                balance = self.calculate_balance(wallet_name)
-                response = {"status": "success", "balance": balance}
-                
-            else:
-                response = {"status": "error", "message": "Unknown command type"}
-                
-            wallet_socket.sendall((json.dumps(response) + "\n").encode())
-            wallet_socket.close()
 
+            # Process subsequent JSON payloads
+            buffer = ""
+            while True:
+                data = wallet_socket.recv(4096).decode()
+                if not data:
+                    break
+                buffer += data
+                
+                # Process complete messages (separated by newlines)
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    try:
+                        request = json.loads(line)
+                        print(f"[MINER] Received request: {request}")
+                    except json.JSONDecodeError:
+                        response = {"status": "error", "message": "Invalid JSON"}
+                        wallet_socket.sendall((json.dumps(response) + "\n").encode())
+                        continue
+                    
+                    # Handle different request types
+                    if request.get("type") == "TRANSACTION":
+                        self.add_transaction_to_mempool(line)
+                        self.broadcast_transaction(line, exclude_socket=wallet_socket)
+                        response = {"status": "transaction_received"}
+                    
+                    elif request.get("type") == "GET_BLOCKCHAIN":
+                        blockchain_data = [
+                            {
+                                "transactions": [tx.tx_to_dict() for tx in block.transactions],
+                                "timestamp": block.timestamp,
+                                "previous_hash": block.previous_hash,
+                                "merkle_root": block.merkle_root,
+                                "nonce": block.nonce,
+                                "hash": block.hash
+                            }
+                            for block in self.blockchain
+                        ]
+                        response = {"status": "success", "blockchain": blockchain_data}
+                    
+                    elif request.get("type") == "GET_MEMPOOL":
+                        with self.mempool_lock:
+                            sorted_mempool = sorted(self.mempool, reverse=True)
+                            mempool_data = [tx.tx_to_dict() for tx in sorted_mempool]
+                        response = {"status": "success", "mempool": mempool_data}
+                    
+                    elif request.get("type") == "GET_BALANCE":
+                        wallet_name = request.get("wallet")
+                        balance = self.calculate_balance(wallet_name)
+                        response = {"status": "success", "balance": balance}
+                    
+                    else:
+                        response = {"status": "error", "message": "Unknown command type"}
+                    
+                    print(f"[MINER] Sending response: {response}")
+                    wallet_socket.sendall((json.dumps(response) + "\n").encode())
         except Exception as e:
             print(f"[MINER ERROR] Wallet handler: {e}")
-            try:
-                wallet_socket.close()
-            except:
-                pass
+        finally:
+            wallet_socket.close()
 
     def handle_miner(self, miner_socket):
         try:
@@ -238,6 +254,7 @@ class Miner:
             tx_dict = json.loads(transaction_json)
             # Skip if it's not a transaction (e.g., if it's a block)
             if "sender" not in tx_dict or "receiver" not in tx_dict:
+                print("[MINER] Invalid transaction format, skipping")
                 return
                 
             tx = Transaction(
@@ -252,12 +269,12 @@ class Miner:
                     if (existing_tx.sender == tx.sender and 
                         existing_tx.receiver == tx.receiver and 
                         existing_tx.amount == tx.amount):
+                        print("[MINER] Duplicate transaction, skipping")
                         return  # Transaction already exists
                         
                 # Add to mempool and maintain heap property
                 self.mempool.append(tx)
-                # Re-heapify to maintain priority based on fees
-                heapq.heapify(self.mempool)
+                heapq.heapify(self.mempool)  # Re-heapify to maintain priority
             print(f"[MINER] Added transaction to mempool: {tx_dict}")
         except Exception as e:
             print(f"[MINER ERROR] Adding transaction to mempool: {e}")
@@ -268,6 +285,7 @@ class Miner:
             if conn != exclude_socket:
                 try:
                     conn.sendall((transaction_json + "\n").encode())  # Ensure newline
+                    print(f"[MINER] Broadcasted transaction to miner {conn.getpeername()}")
                 except Exception as e:
                     print(f"[MINER ERROR] Broadcasting transaction: {e}")
                     disconnected_sockets.append(conn)

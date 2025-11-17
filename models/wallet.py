@@ -4,7 +4,7 @@ import json
 import time
 
 class Wallet:
-    def __init__(self, owner,balance):
+    def __init__(self, owner, balance=100):  # Default balance set to 100
         self.owner = owner
         self.received_transactions = []
         self.sent_transactions = []
@@ -45,6 +45,8 @@ class Wallet:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((miner["ip"], miner["port"]))
+            s.sendall(b"WALLET\n")  # Send connection type immediately
+            print(f"[WALLET] Connected to miner at {miner['ip']}:{miner['port']}")
             return s
         except Exception as e:
             print(f"[WALLET ERROR] Could not connect to miner: {e}")
@@ -61,9 +63,6 @@ class Wallet:
             if not sock:
                 return False
                 
-            # Send connection type
-            sock.sendall(b"WALLET\n")
-            
             # Send balance query
             query = {
                 "type": "GET_BALANCE",
@@ -73,7 +72,15 @@ class Wallet:
             
             # Receive response
             data = sock.recv(4096).decode().strip()
-            response = json.loads(data)
+            if not data:
+                print("[WALLET ERROR] Empty response from miner")
+                return False
+            
+            try:
+                response = json.loads(data)
+            except json.JSONDecodeError:
+                print("[WALLET ERROR] Malformed response from miner")
+                return False
             
             if response.get("status") == "success":
                 self.balance = response.get("balance", 0)
@@ -120,9 +127,6 @@ class Wallet:
             if not sock:
                 return False
                 
-            # Send connection type
-            sock.sendall(b"WALLET\n")
-            
             # Send transaction
             tx = {
                 "type": "TRANSACTION",
@@ -132,10 +136,20 @@ class Wallet:
                 "fee": 0
             }
             sock.sendall((json.dumps(tx) + "\n").encode())
+            print(f"[WALLET] Sent transaction: {tx}")
             
             # Receive response
             data = sock.recv(4096).decode().strip()
-            response = json.loads(data)
+            if not data:
+                print("[WALLET ERROR] Empty response from miner")
+                return False
+            
+            try:
+                response = json.loads(data)
+                print(f"[WALLET] Received response: {response}")
+            except json.JSONDecodeError:
+                print("[WALLET ERROR] Malformed response from miner")
+                return False
             
             if response.get("status") == "transaction_received":
                 # Update local records
@@ -145,7 +159,7 @@ class Wallet:
                     "timestamp": time.time()
                 })
                 self.balance -= amount
-                print(f"[WALLET] Transaction sent: {self.owner} -> {receiver}: {amount}")
+                print(f"[WALLET] Transaction sent successfully: {self.owner} -> {receiver}: {amount}")
                 sock.close()
                 return True
             else:

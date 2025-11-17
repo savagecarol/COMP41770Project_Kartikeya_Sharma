@@ -23,10 +23,10 @@ def start_miners():
 def start_wallets():
     wallets = []
     for i in range(1, 6):
-        wallet = Wallet(f"Client{i}", 100)
+        wallet = Wallet(f"Client{i}", 100)  # Explicitly set balance to 100
         wallet.connect_to_bootstrap("127.0.0.1", 5500)
         wallets.append(wallet)
-        print(f"[NODES] Wallet Client{i} started")
+        print(f"[NODES] Wallet Client{i} started with balance 100")
     return wallets
 
 def start_mining_loop(miner):
