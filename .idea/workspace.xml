@@ -6,6 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="89653228-c38a-4e09-bc88-90dfe6498c2b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/blockchain-logger/src/BlockChainLogger.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain-logger/src/BlockChainLogger.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_script_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_script_v2.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
