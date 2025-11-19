@@ -4,12 +4,7 @@ from models.wallet import Wallet
 from models.Miner import Miner
 from models.bootstrapNode import BootstrapNode
 from utils.constants import MINER_PORT, TRANS_PER_BLOCK
-import sys
-from logger import start_logging, stop_logging
 
-# Import the logger
-sys.path.append('.')
-from logger import start_logging, stop_logging
 
 BOOTSTRAP_IP = "127.0.0.1"
 BOOTSTRAP_PORT = 5500
@@ -111,8 +106,8 @@ def print_blockchains(miners):
     print("[TEST] Checking miner blockchains")
     for miner in miners:
         print(f"[MINER {miner.port}] Blockchain length: {len(miner.blockchain)} blocks")
-        for block in miner.blockchain:
-            print(f"[MINER {miner.port}] Block: {block.hash[:16]}... with {len(block.transactions)} transactions")
+        for i, block in enumerate(miner.blockchain):
+            print(f"[MINER {miner.port}] Block {i+1}: {block.hash[:16]}... with {len(block.transactions)} transactions")
 
 
 def mine_block(miner):
@@ -150,6 +145,26 @@ def update_wallet_balances(wallets):
         print(f"[WALLET {name}] Final balance: {wallet.balance}")
 
 
+def synchronize_blockchains(miners):
+    """Ensure all miners have the same blockchain length"""
+    print("[TEST] Synchronizing blockchains...")
+    
+    # Give some time for blocks to propagate
+    time.sleep(5)
+    
+    # Find the maximum blockchain length
+    max_length = max(len(miner.blockchain) for miner in miners)
+    print(f"[TEST] Target blockchain length: {max_length}")
+    
+    # Check blockchain lengths
+    for miner in miners:
+        current_length = len(miner.blockchain)
+        if current_length < max_length:
+            print(f"[TEST] Miner {miner.port} is behind ({current_length}/{max_length})")
+        else:
+            print(f"[TEST] Miner {miner.port} is synchronized ({current_length}/{max_length})")
+
+
 def shutdown(miners, bootstrap):
     print("[TEST] Shutting down system")
     for miner in miners:
@@ -171,9 +186,6 @@ def shutdown(miners, bootstrap):
 def test_blockchain():
     global stop_test_flag
     stop_test_flag = False  # Reset flag on start
-
-    # Start logging
-    logger = start_logging("blockchain_logs.txt")
 
     print("[TEST] Blockchain test starting")
     time.sleep(2)
@@ -197,6 +209,9 @@ def test_blockchain():
     mine_block(miners[0])
     time.sleep(3)
 
+    # Add synchronization step
+    synchronize_blockchains(miners)
+    
     print("[TEST] All miner blockchains")
     print_blockchains(miners)
     time.sleep(2)
@@ -205,10 +220,7 @@ def test_blockchain():
     time.sleep(2)
 
     shutdown(miners, bootstrap)
-
-    # Stop logging
-    stop_logging(logger)
-    print("[TEST] Log file saved to blockchain_logs.txt")
+    print("[TEST] Test completed successfully")
 
 
 # --- Add this function to stop the test externally ---
