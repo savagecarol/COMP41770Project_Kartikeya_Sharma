@@ -1,58 +1,45 @@
 import sys
-from datetime import datetime
 
-class PrintToFileLogger:
+
+class WebSocketLogger:
     """
-    Intercepts all print() statements and saves only lines containing [] to a file.
-    Also prints to console normally.
+    Intercepts all print() statements for WebSocket broadcasting.
+    This is a simplified version that just intercepts stdout.
+    The actual broadcasting is handled by the Flask app.
     """
-    
-    def __init__(self, filename="blockchain_logs.txt"):
-        self.filename = filename
+
+    def __init__(self):
         self.original_stdout = sys.stdout
-        self.file = open(filename, 'w')
-        
-        # Write header
-        self.file.write(f"=== Blockchain Logs - Started at {datetime.now()} ===\n")
-        self.file.flush()
-    
+
     def write(self, text):
         """Intercept all print statements"""
-        # Always write to console
+        # Always write to console (which Flask will capture)
         self.original_stdout.write(text)
-        
-        # Only write to file if line contains []
-        text = text.strip()
-        if text and '[' in text and ']' in text:
-            timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-            self.file.write(f"[{timestamp}] {text}\n")
-            self.file.flush()
-    
+
     def flush(self):
         """Required for file-like object"""
         self.original_stdout.flush()
-        self.file.flush()
-    
+
     def close(self):
-        """Close the file"""
-        self.file.close()
+        """Restore original stdout"""
         sys.stdout = self.original_stdout
 
 
-def start_logging(filename="blockchain_logs.txt"):
+def start_logging(filename=None):
     """
-    Start capturing print statements to file.
-    Call this at the START of your main script.
+    Start capturing print statements.
+    Filename parameter is kept for compatibility but ignored.
     """
-    logger = PrintToFileLogger(filename)
+    logger = WebSocketLogger()
     sys.stdout = logger
-    print(f"[TEST] Logging started - saving to {filename}")
+    print(f"[WEBSOCKET] Logging started - broadcasting to clients")
     return logger
+
 
 def stop_logging(logger):
     """
-    Stop logging and close file.
-    Call this at the END of your script.
+    Stop logging and restore stdout.
     """
-    logger.close()
-    print(f"[TEST] Logging stopped")
+    if logger:
+        logger.close()
+    print(f"[WEBSOCKET] Logging stopped")
