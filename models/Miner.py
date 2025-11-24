@@ -369,6 +369,7 @@ class Miner:
                     if (block_tx.sender == tx.sender and
                             block_tx.receiver == tx.receiver and
                             block_tx.amount == tx.amount):
+                        print(f"[MINER ERROR {self.port}] transaction already exist")
                         return True
         return False
 
