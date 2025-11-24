@@ -1,150 +1,230 @@
-# COMP41770 Project - Course Management System
+# Blockchain Network Simulator
 
-A full-stack course management application built with modern web technologies. This system allows users to browse courses, manage enrollments, and track learning progress.
+A real-time blockchain network simulator that demonstrates core concepts of distributed ledger technology including mining, transaction processing, and peer-to-peer networking. This system visualizes how transactions flow through a blockchain network with multiple miners, wallets, and a bootstrap node.
 
-## 🌐 Deployment Links
+## 🌐 Live Demo
 
 - **Backend API**: [https://comp41770project-kartikeya-sharma.onrender.com/](https://comp41770project-kartikeya-sharma.onrender.com/)
-- **Frontend Application**: [https://comp41770project-kartikeya-sharma-1.onrender.com/](https://comp41770project-kartikeya-sharma-1.onrender.com/)
+- **Frontend Logger**: [https://comp41770project-kartikeya-sharma-1.onrender.com/](https://comp41770project-kartikeya-sharma-1.onrender.com/)
 
-> **Note**: Every push to the [main](file:///Users/apple/Documents/ucd/blockchain/main.py#L0-L0) branch triggers automatic deployment to Render.
+> **Deployment**: Automatic deployment occurs on every push to the main branch via Render.
 
 ## 🔄 System Architecture Flow Diagram
 
 ```mermaid
 graph TD
-    A[User Interface] --> B{Frontend App}
-    B --> C[API Requests]
-    C --> D[Backend Server]
-    D --> E[(Database)]
-    E --> D
-    D --> F[API Responses]
-    F --> B
-    B --> G[Rendered UI]
-    G --> A
+    A[Frontend Logger] <--WebSocket--> B[Flask Backend]
+    B <--Socket Connection--> C[Bootstrap Node]
+    C <--Registration--> D[Miner 1]
+    C <--Registration--> E[Miner 2]
+    C <--Registration--> F[Miner 3]
+    C <--Registration--> G[Miner 4]
+    D <--> E
+    E <--> F
+    F <--> G
+    G <--> D
+    H[Wallet 1] --> D
+    I[Wallet 2] --> E
+    J[Wallet N] --> F
+    K[Test Script] --> B
     
     style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style D fill:#fff3e0
-    style E fill:#fce4ec
+    style B fill:#fce4ec
+    style C fill:#fff3e0
+    style D fill:#e8f5e9
+    style E fill:#e8f5e9
+    style F fill:#e8f5e9
+    style G fill:#e8f5e9
+    style H fill:#f3e5f5
+    style I fill:#f3e5f5
+    style J fill:#f3e5f5
+    style K fill:#fafafa
 ```
 
-The system follows a client-server architecture where:
-1. Users interact with the frontend application hosted on Render
-2. Frontend makes API requests to the backend server
-3. Backend processes requests and interacts with the database
-4. Data is returned to frontend which renders the user interface
+The system consists of several interconnected components:
+1. **Frontend Logger**: Real-time visualization of blockchain events
+2. **Backend API**: Flask server handling WebSocket communications
+3. **Bootstrap Node**: Registration point for all miners in the network
+4. **Miners**: Process transactions, mine blocks, and maintain the blockchain
+5. **Wallets**: Generate and send transactions between participants
+6. **Test Script**: Orchestrates the entire simulation process
 
-## 🔧 Backend Functionality
+## 🧱 Core Components & Functionality
 
-### Authentication Module
-- `login()`: Authenticates users and generates JWT tokens
-- `register()`: Creates new user accounts in the system
-- `logout()`: Invalidates user sessions
-- `verifyToken()`: Middleware to validate authentication tokens
+### Transaction Model ([models/transaction.py](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py))
+Represents a financial transaction in the blockchain network.
 
-### Course Management Module
-- `getCourses()`: Retrieves all available courses from database
-- `getCourseById(courseId)`: Fetches specific course details by ID
-- `createCourse(courseData)`: Allows admins to create new courses
-- `updateCourse(courseId, updates)`: Modifies existing course information
-- `deleteCourse(courseId)`: Removes courses from the system
+- [__init__()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L1-L5): Initializes a transaction with sender, receiver, fees, and amount
+- [tx_to_dict()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L39-L45): Serializes transaction to dictionary format
+- [from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L48-L54): Deserializes transaction from dictionary format
+- Comparison operators: Enable priority queue sorting based on transaction fees
 
-### Enrollment Module
-- `enrollUser(userId, courseId)`: Registers users for specific courses
-- `getUserEnrollments(userId)`: Lists all courses a user is enrolled in
-- `dropCourse(enrollmentId)`: Unenrolls users from courses
-- `getEnrollmentStats(courseId)`: Provides enrollment statistics for courses
+### Block Model ([models/block.py](file:///Users/apple/Documents/ucd/blockchain/models/block.py))
+Represents a block in the blockchain containing multiple transactions.
 
-### User Profile Module
-- `getUserProfile(userId)`: Retrieves user profile information
-- `updateUserProfile(userId, profileData)`: Updates user profile details
-- `getUserProgress(userId)`: Tracks user's course completion status
+- [__init__()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L1-L5): Creates a block with transactions and previous block hash
+- [compute_hash()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L15-L24): Calculates SHA256 hash of the block contents
+- [build_merkle_root()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L26-L45): Constructs Merkle tree root from transactions
+- [mine_block()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L47-L53): Performs proof-of-work to find valid block hash
+- [to_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L56-L65) / [from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L68-L76): Serialization/deserialization methods
 
-### Admin Module
-- `getAllUsers()`: Lists all registered users (admin only)
-- `deleteUser(userId)`: Removes user accounts (admin only)
-- `getSystemStats()`: Provides overall system usage metrics
+### Wallet Model ([models/wallet.py](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py))
+Represents a participant in the blockchain network who can send/receive transactions.
 
-## 💻 Frontend Functionality
+- [connect_to_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L13-L33): Establishes connection with bootstrap node to get miner list
+- [select_miner()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L35-L41): Randomly selects a miner for transaction processing
+- [connect_to_miner()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L43-L52): Establishes direct connection with a miner
+- [update_balance()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L54-L100): Queries miner for current wallet balance
+- [get_balance()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L102-L105): Returns current wallet balance
+- [send_transaction()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L107-L175): Sends transaction to another wallet through a miner
 
-### Navigation Components
-- `Header`: Displays navigation menu and user authentication status
-- `Footer`: Shows copyright information and additional links
-- `Sidebar`: Provides quick access to different sections of the app
+### Miner Model ([models/Miner.py](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py))
+Processes transactions, mines blocks, and maintains blockchain state.
 
-### Authentication Pages
-- `Login Component`: Handles user login with email/password
-- `Register Component`: Manages new user registration process
-- `ProtectedRoute`: Ensures only authenticated users can access certain pages
+- [__init__()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L6-L11): Initialize miner with network parameters
+- [start()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L30-L35): Starts miner services including server and connection maintenance
+- [auto_mine()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L37-L43): Automatically attempts to mine blocks when enough transactions exist
+- [connect_to_peers()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L46-L60): Establishes connections with other miners
+- [run_server()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L62-L73): Listens for incoming connections from wallets and miners
+- [handle_client()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L75-L105): Processes requests from connected clients
+- [register_to_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L107-L134): Registers with bootstrap node to join network
+- [maintain_miner_connections()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L136-L151): Keeps connections with other miners updated
+- [add_transaction_to_mempool()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L236-L249): Adds new transaction to pending transactions pool
+- [broadcast_transaction()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L251-L257): Shares transaction with all connected miners
+- [produce_block()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L259-L274): Mines a new block from transactions in mempool
+- [add_block_to_chain()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L276-L292): Adds a newly mined block to the blockchain
+- [broadcast_block()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L294-L300): Shares newly mined block with all connected miners
+- [calculate_balance()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L302-L316): Computes wallet balance based on blockchain state
 
-### Course Management Pages
-- `CourseList`: Displays all available courses in card format
-- `CourseDetail`: Shows comprehensive information about a specific course
-- `MyCourses`: Lists courses that the current user is enrolled in
-- `CreateCourse`: Admin form for adding new courses to the system
+### Bootstrap Node ([models/bootstrapNode.py](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py))
+Central registry for all miners in the network.
 
-### User Dashboard
-- `Dashboard`: Main user interface showing personalized content
-- `Profile`: Allows users to view and edit their personal information
-- `ProgressTracker`: Visualizes user's learning progress across courses
-- `Notifications`: Displays important alerts and system messages
+- [__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28): Initializes bootstrap node with host/port
+- [start()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L30-L35): Starts listening for miner registrations
+- [handle_client()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L75-L105): Processes registration and miner list requests
+- [receive_json_line()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L67-L80) / [send_json_line()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L82-L87): JSON communication helpers
 
-### Utility Functions
-- `apiClient`: Centralized HTTP client for making API requests
-- `authService`: Handles authentication-related operations
-- `courseService`: Manages course data fetching and manipulation
-- `storageService`: Handles local storage operations for persistent data
+### Test Script ([test_script_v2.py](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py))
+Orchestrates the entire blockchain simulation process.
 
-## 🚀 Development Workflow
+- [start_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/main.py#L7-L11): Initializes and starts bootstrap node
+- [start_miners()](file:///Users/apple/Documents/ucd/blockchain/main.py#L13-L20): Creates and starts multiple miners
+- [setup_wallets()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L57-L69): Creates wallets and connects them to the network
+- [simulate_transactions()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L72-L97): Generates transactions between wallets
+- [print_mempools()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L100-L106): Displays current transaction pools of all miners
+- [print_blockchains()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L109-L114): Shows current state of all miner blockchains
+- [mine_block()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L47-L53): Triggers manual block mining process
+- [update_wallet_balances()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L139-L149): Updates and displays final wallet balances
+- [shutdown()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L152-L167): Gracefully stops all components
+- [test_blockchain()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L170-L210): Main orchestrator function that runs the full simulation
+- [stop_test()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L214-L217): Stops ongoing test execution
+
+## 🖥️ Frontend Logger (`blockchain-logger/`)
+
+### BlockchainLogger Component ([BlockChainLogger.jsx](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx))
+Real-time visualization dashboard for blockchain events.
+
+- **State Management**: Manages logs, connection status, and test execution state
+- **WebSocket Integration**: Connects to backend via Socket.IO for real-time updates
+- **Log Filtering**: Separates logs by component type (bootstrap, miners, wallets, etc.)
+- **Interactive UI**: Allows viewing individual log entries and full log sections
+- **Test Controls**: Provides buttons to start/stop tests and clear logs
+
+#### Key Functions:
+- `useEffect()` hooks: Handle WebSocket connection lifecycle
+- `startTest()`: Initiates blockchain simulation
+- `clearLogs()`: Clears displayed logs
+- [LogSection](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L89-L153): Component for displaying categorized logs
+- [SectionModal](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L57-L87): Modal for viewing complete log sections
+- Auto-scroll functionality: Keeps logs visible as they arrive
+
+### Log Categories Displayed:
+1. **Bootstrap Node**: Registration and coordination messages
+2. **Miners**: Mining activities, block creation, and peer communications
+3. **Wallets**: Transaction initiation and balance queries
+4. **Test Logs**: Progress indicators and orchestration messages
+5. **Errors**: Any system errors or exceptions
+
+## ⚙️ Backend API ([api/index.py](file:///Users/apple/Documents/ucd/blockchain/api/index.py))
+
+Central Flask server handling WebSocket communications and test orchestration.
+
+### WebSocketLogger Class
+Intercepts standard output and broadcasts log messages to connected clients.
+
+- [write()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L22-L32): Captures print statements and emits them via WebSocket
+- [flush()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L34-L35): Ensures immediate delivery of log messages
+- [close()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L37-L38): Restores normal stdout behavior
+
+### API Endpoints:
+- [/](file:///Users/apple/Documents/ucd/blockchain/api/index.py): Health check endpoint returning simple confirmation
+- `/health`: Status endpoint indicating server is operational
+
+### WebSocket Event Handlers:
+- [handle_connect()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L60-L62): Manages new client connections
+- [handle_disconnect()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L65-L66): Handles client disconnections
+- [handle_start_test()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L69-L90): Initiates blockchain simulation
+- [handle_stop_test()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L93-L107): Stops ongoing blockchain simulation
+
+## 🛠️ Constants ([utils/constants.py](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py))
+
+Configuration values used throughout the system:
+- [TRANS_PER_BLOCK](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L0-L0): Number of transactions per block (4)
+- [QUEUED_CONNECTION](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L1-L1): Maximum queued connections (20)
+- [MINER_PORT](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L2-L2): List of ports for miner instances ([6001, 6002, 6003, 6004])
+- [MINING_DIFFICULTY](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L3-L3): Proof-of-work difficulty level (2 leading zeros)
+
+## 🚀 Development & Deployment Workflow
 
 ### Continuous Deployment Process
 ```mermaid
 flowchart LR
     A[Git Push to Main] --> B[GitHub Webhook]
     B --> C[Render Deployment Trigger]
-    C --> D[Build Process]
-    D --> E[Deploy to Production]
-    E --> F[Live Application]
+    C --> D[Backend Build Process]
+    C --> E[Frontend Build Process]
+    D --> F[Backend Deploy]
+    E --> G[Frontend Deploy]
+    F --> H[Live API]
+    G --> I[Live Logger]
 ```
 
-1. Developers push code changes to the [main](file:///Users/apple/Documents/ucd/blockchain/main.py#L0-L0) branch
-2. GitHub sends webhook notification to Render
-3. Render automatically starts build process
-4. Application is deployed to production servers
-5. New version becomes live within minutes
+1. Developer pushes code changes to main branch
+2. GitHub notifies Render via webhook
+3. Render simultaneously builds backend and frontend applications
+4. Applications are deployed to production servers
+5. Services become accessible via provided URLs
 
 ### Local Development Setup
-1. Clone repository
-2. Install dependencies for both frontend and backend
-3. Set up environment variables
-4. Run development servers locally
-5. Make changes and test functionality
-6. Commit and push to [main](file:///Users/apple/Documents/ucd/blockchain/main.py#L0-L0) branch for deployment
+1. Clone the repository
+2. Install Python dependencies: `pip install -r requirements.txt`
+3. Install frontend dependencies: `cd blockchain-logger && npm install`
+4. Run backend server: `python api/index.py`
+5. Run frontend: `cd blockchain-logger && npm start`
+6. Access logger at http://localhost:3000
 
 ## 📊 System Features
 
-### For Students
-- Browse available courses
-- Enroll in courses of interest
-- Track learning progress
-- Access course materials
-- View enrollment history
+### Real-time Monitoring
+- Live log streaming from all blockchain components
+- Color-coded log categories for easy identification
+- Interactive log inspection capabilities
 
-### For Instructors/Admins
-- Create and manage course content
-- Monitor student enrollments
-- View system analytics
-- Manage user accounts
-- Update course information
+### Blockchain Simulation
+- Complete blockchain network with multiple miners
+- Transaction generation and propagation
+- Proof-of-work mining demonstration
+- Wallet balance management
 
-## 🔒 Security Measures
+### Network Visualization
+- Peer-to-peer miner connections
+- Transaction flow tracking
+- Block propagation monitoring
 
-- JWT-based authentication
-- Password encryption
-- Role-based access control
-- Input validation and sanitization
-- Protected API endpoints
-- Secure session management
+### Educational Value
+- Demonstrates core blockchain concepts
+- Shows distributed consensus mechanisms
+- Illustrates network communication patterns
+- Provides insight into mining process
 
-This documentation provides an overview of the system architecture and functionality. For detailed technical implementation, please refer to the source code and inline comments.
+This comprehensive system provides a hands-on demonstration of how blockchain networks operate, with real-time visibility into the various processes that occur behind the scenes.
