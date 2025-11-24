@@ -6,7 +6,7 @@ const BlockchainLogger = () => {
     const [logs, setLogs] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [isTestRunning, setIsTestRunning] = useState(false);
-    const [selectedLogSection, setSelectedLogSection] = useState(null); // For modal section view
+    const [selectedLogSection, setSelectedLogSection] = useState(null); 
     const socketRef = useRef(null);
 
     const testRef = useRef(null);
@@ -16,7 +16,7 @@ const BlockchainLogger = () => {
     const errorRef = useRef(null);
 
     useEffect(() => {
-        socketRef.current = io('http://localhost:5400');
+        socketRef.current = io('https://comp41770project-kartikeya-sharma.onrender.com/');
 
         socketRef.current.on('connect', () => setIsConnected(true));
         socketRef.current.on('disconnect', () => setIsConnected(false));
