@@ -53,6 +53,10 @@ def stop_logging():
         logger.close()
         print("[WEBSOCKET] Logging stopped")
 
+@app.route("/")
+def home():
+    return "Hello from Vercel!"
+
 @socketio.on('connect')
 def handle_connect():
     print(f"[WEBSOCKET] Client connected")
