@@ -16,7 +16,7 @@ const BlockchainLogger = () => {
     const errorRef = useRef(null);
 
     useEffect(() => {
-        socketRef.current = io('https://comp41770project-kartikeya-sharma.onrender.com/');
+        socketRef.current = io('https://comp41770project-kartikeya-sharma.onrender.com');
 
         socketRef.current.on('connect', () => setIsConnected(true));
         socketRef.current.on('disconnect', () => setIsConnected(false));
