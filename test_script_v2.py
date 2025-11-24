@@ -5,7 +5,7 @@ from models.Miner import Miner
 from models.bootstrapNode import BootstrapNode
 from utils.constants import MINER_PORT, TRANS_PER_BLOCK
 import sys
-from logger import start_logging, stop_logging
+
 
 # Import the logger
 sys.path.append('.')

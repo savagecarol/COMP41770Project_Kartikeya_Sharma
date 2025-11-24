@@ -2,6 +2,7 @@ import hashlib
 import time
 import json
 from utils.constants import MINING_DIFFICULTY
+from models.transaction import Transaction
 
 
 class Block:
@@ -52,7 +53,7 @@ class Block:
             self.nonce += 1
             self.hash = self.compute_hash()
         print(f"Block mined: {self.hash}")
-    
+        return True
 
     def to_dict(self):
         """Serialize the block for broadcasting."""
