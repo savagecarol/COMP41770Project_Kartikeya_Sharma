@@ -19,6 +19,7 @@ class Miner:
         self.running = False
         self.wallet_connections = []
         self.miner_connections = []
+        self.miner_connections_lock = threading.Lock()
         self.connected_miners = set()
 
         self.mempool = []
@@ -31,6 +32,7 @@ class Miner:
 
         # Mining control
         self.currently_mining = False
+        self.mining_lock = threading.Lock()
         self.stop_mining = threading.Event()
 
     def start(self):
@@ -47,22 +49,29 @@ class Miner:
 
     def sync_blockchain_on_startup(self):
         """Request blockchain from peers when starting"""
-        if self.miner_connections:
-            print(f"[MINER {self.port}] Requesting blockchain from peers...")
-            try:
-                self.request_chain_from_peer(self.miner_connections[0])
-                time.sleep(2)
-            except:
-                pass
+        with self.miner_connections_lock:
+            if self.miner_connections:
+                print(f"[MINER {self.port}] Requesting blockchain from peers...")
+                try:
+                    self.request_chain_from_peer(self.miner_connections[0])
+                    time.sleep(2)
+                except:
+                    pass
 
     def auto_mine(self):
         """Continuously attempt to mine blocks"""
         while self.running:
-            time.sleep(3)
+            time.sleep(2)
+
+            # Check if we should mine
             with self.mempool_lock:
                 mempool_size = len(self.mempool)
 
-            if mempool_size >= TRANS_PER_BLOCK and not self.currently_mining:
+            with self.mining_lock:
+                should_mine = (mempool_size >= TRANS_PER_BLOCK and
+                               not self.currently_mining)
+
+            if should_mine:
                 threading.Thread(target=self.produce_block, daemon=True).start()
 
     def connect_to_peers(self, miners_list):
@@ -76,8 +85,11 @@ class Miner:
                 sock.connect(peer)
                 sock.sendall("MINER\n".encode())
                 sock.settimeout(None)
-                self.miner_connections.append(sock)
-                self.connected_miners.add(peer)
+
+                with self.miner_connections_lock:
+                    self.miner_connections.append(sock)
+                    self.connected_miners.add(peer)
+
                 threading.Thread(target=self.handle_miner, args=(sock,), daemon=True).start()
                 print(f"[MINER {self.port}] Connected to miner {peer[1]}")
             except Exception as e:
@@ -116,13 +128,13 @@ class Miner:
                 client_socket.recv(1024)  # Consume the "MINER\n" line
                 client_socket.settimeout(None)
 
-                if addr not in [(c.getpeername()[0], c.getpeername()[1]) if c else (None, None) for c in
-                                self.miner_connections]:
+                with self.miner_connections_lock:
                     self.miner_connections.append(client_socket)
                     peer = (addr[0], addr[1])
                     self.connected_miners.add(peer)
-                    threading.Thread(target=self.handle_miner, args=(client_socket,), daemon=True).start()
-                    print(f"[MINER {self.port}] Accepted miner connection from {addr}")
+
+                threading.Thread(target=self.handle_miner, args=(client_socket,), daemon=True).start()
+                print(f"[MINER {self.port}] Accepted miner connection from {addr}")
             else:
                 # This is a wallet/client connection
                 client_socket.settimeout(10)
@@ -247,8 +259,11 @@ class Miner:
             s.connect(peer)
             s.sendall("MINER\n".encode())
             s.settimeout(None)
-            self.miner_connections.append(s)
-            self.connected_miners.add(peer)
+
+            with self.miner_connections_lock:
+                self.miner_connections.append(s)
+                self.connected_miners.add(peer)
+
             threading.Thread(target=self.handle_miner, args=(s,), daemon=True).start()
             print(f"[MINER {self.port}] Connected to miner {ip}:{port}")
         except Exception as e:
@@ -318,8 +333,10 @@ class Miner:
                 miner_socket.close()
             except:
                 pass
-            if miner_socket in self.miner_connections:
-                self.miner_connections.remove(miner_socket)
+
+            with self.miner_connections_lock:
+                if miner_socket in self.miner_connections:
+                    self.miner_connections.remove(miner_socket)
 
     def add_transaction_to_mempool(self, transaction_json):
         try:
@@ -358,7 +375,11 @@ class Miner:
     def broadcast_transaction(self, transaction_json, exclude_socket=None):
         """Broadcast transaction to all connected miners"""
         dead_connections = []
-        for conn in self.miner_connections:
+
+        with self.miner_connections_lock:
+            connections = list(self.miner_connections)
+
+        for conn in connections:
             if conn != exclude_socket:
                 try:
                     conn.sendall((transaction_json + "\n").encode())
@@ -366,21 +387,25 @@ class Miner:
                     dead_connections.append(conn)
 
         # Remove dead connections
-        for conn in dead_connections:
-            if conn in self.miner_connections:
-                self.miner_connections.remove(conn)
+        if dead_connections:
+            with self.miner_connections_lock:
+                for conn in dead_connections:
+                    if conn in self.miner_connections:
+                        self.miner_connections.remove(conn)
 
     def produce_block(self):
-        if self.currently_mining:
-            return None
+        with self.mining_lock:
+            if self.currently_mining:
+                return None
+            self.currently_mining = True
 
-        self.currently_mining = True
         self.stop_mining.clear()
 
         try:
             with self.mempool_lock:
                 if len(self.mempool) < TRANS_PER_BLOCK:
-                    self.currently_mining = False
+                    with self.mining_lock:
+                        self.currently_mining = False
                     return None
                 selected_tx = [heapq.heappop(self.mempool) for _ in range(min(TRANS_PER_BLOCK, len(self.mempool)))]
 
@@ -399,7 +424,8 @@ class Miner:
                     for tx in selected_tx:
                         if not self.is_transaction_in_chain(tx):
                             heapq.heappush(self.mempool, tx)
-                self.currently_mining = False
+                with self.mining_lock:
+                    self.currently_mining = False
                 return None
 
             # Mining succeeded - add to chain
@@ -411,7 +437,8 @@ class Miner:
                         for tx in selected_tx:
                             if not self.is_transaction_in_chain(tx):
                                 heapq.heappush(self.mempool, tx)
-                    self.currently_mining = False
+                    with self.mining_lock:
+                        self.currently_mining = False
                     return None
 
                 self.blockchain.append(new_block)
@@ -421,16 +448,20 @@ class Miner:
             self.broadcast_block(new_block)
             print(f"[MINER {self.port}] Successfully mined and broadcast block: {new_block.hash[:16]}...")
 
-            self.currently_mining = False
+            with self.mining_lock:
+                self.currently_mining = False
             return new_block
 
         except Exception as e:
             print(f"[MINER ERROR] produce_block: {e}")
-            self.currently_mining = False
+            import traceback
+            traceback.print_exc()
+            with self.mining_lock:
+                self.currently_mining = False
             return None
 
     def mine_block_with_cancel(self, block):
-        """Mine block with ability to cancel"""
+        """Mine block with ability to cancel - check frequently"""
         target = "0" * MINING_DIFFICULTY
 
         while not block.hash.startswith(target):
@@ -440,8 +471,8 @@ class Miner:
             block.nonce += 1
             block.hash = block.compute_hash()
 
-            # Check every 1000 iterations
-            if block.nonce % 1000 == 0:
+            # Check every 100 iterations (more frequent checks)
+            if block.nonce % 100 == 0:
                 if self.stop_mining.is_set():
                     return False
 
@@ -488,9 +519,10 @@ class Miner:
                         return False
 
                 # Stop current mining if in progress
-                if self.currently_mining:
-                    self.stop_mining.set()
-                    print(f"[MINER {self.port}] Stopping current mining due to new block")
+                with self.mining_lock:
+                    if self.currently_mining:
+                        self.stop_mining.set()
+                        print(f"[MINER {self.port}] Stopping current mining due to new block")
 
                 # Remove transactions from mempool
                 with self.mempool_lock:
@@ -524,7 +556,10 @@ class Miner:
         dead_connections = []
         broadcast_count = 0
 
-        for conn in self.miner_connections:
+        with self.miner_connections_lock:
+            connections = list(self.miner_connections)
+
+        for conn in connections:
             try:
                 conn.sendall(block_str.encode())
                 broadcast_count += 1
@@ -535,9 +570,11 @@ class Miner:
         print(f"[MINER {self.port}] Block broadcast to {broadcast_count} miners")
 
         # Remove dead connections
-        for conn in dead_connections:
-            if conn in self.miner_connections:
-                self.miner_connections.remove(conn)
+        if dead_connections:
+            with self.miner_connections_lock:
+                for conn in dead_connections:
+                    if conn in self.miner_connections:
+                        self.miner_connections.remove(conn)
 
     def broadcast_block_dict(self, block_dict, exclude_socket=None):
         """Re-broadcast received block to other miners"""
@@ -545,7 +582,10 @@ class Miner:
         dead_connections = []
         broadcast_count = 0
 
-        for conn in self.miner_connections:
+        with self.miner_connections_lock:
+            connections = list(self.miner_connections)
+
+        for conn in connections:
             if conn != exclude_socket:
                 try:
                     conn.sendall(block_str.encode())
@@ -557,9 +597,11 @@ class Miner:
             print(f"[MINER {self.port}] Re-broadcast block to {broadcast_count} miners")
 
         # Remove dead connections
-        for conn in dead_connections:
-            if conn in self.miner_connections:
-                self.miner_connections.remove(conn)
+        if dead_connections:
+            with self.miner_connections_lock:
+                for conn in dead_connections:
+                    if conn in self.miner_connections:
+                        self.miner_connections.remove(conn)
 
     def validate_chain(self, chain):
         """Validate an entire blockchain"""
@@ -603,8 +645,9 @@ class Miner:
             print(f"[MINER {self.port}] Replacing chain: {len(self.blockchain)} -> {len(new_chain)} blocks")
 
             # Stop current mining
-            if self.currently_mining:
-                self.stop_mining.set()
+            with self.mining_lock:
+                if self.currently_mining:
+                    self.stop_mining.set()
 
             self.blockchain = new_chain
             self.last_block_hash = new_chain[-1].hash if new_chain else "0" * 64
@@ -680,12 +723,13 @@ class Miner:
             except:
                 pass
 
-        for sock in self.wallet_connections + self.miner_connections:
-            try:
-                sock.shutdown(socket.SHUT_RDWR)
-            except:
-                pass
-            try:
-                sock.close()
-            except:
-                pass
+        with self.miner_connections_lock:
+            for sock in self.wallet_connections + self.miner_connections:
+                try:
+                    sock.shutdown(socket.SHUT_RDWR)
+                except:
+                    pass
+                try:
+                    sock.close()
+                except:
+                    pass
