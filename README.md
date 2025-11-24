@@ -52,38 +52,34 @@ The system consists of several interconnected components:
 ## 🧱 Core Components & Functionality
 
 ### Transaction Model ([models/transaction.py](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py))
-
 Represents a financial transaction in the blockchain network.
 
-- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initializes a transaction with sender, receiver, fees, and amount
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L1-L5)**: Initializes a transaction with sender, receiver, fees, and amount
 - **[tx_to_dict()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L39-L45)**: Serializes transaction to dictionary format
-- **[from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L68-L76)**: Deserializes transaction from dictionary format
+- **[from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L48-L54)**: Deserializes transaction from dictionary format
 - Comparison operators: Enable priority queue sorting based on transaction fees
 
 ### Block Model ([models/block.py](file:///Users/apple/Documents/ucd/blockchain/models/block.py))
-
 Represents a block in the blockchain containing multiple transactions.
 
-- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Creates a block with transactions and previous block hash
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L8-L13)**: Creates a block with transactions and previous block hash
 - **[compute_hash()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L15-L24)**: Calculates SHA256 hash of the block contents
 - **[build_merkle_root()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L26-L45)**: Constructs Merkle tree root from transactions
 - **[mine_block()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L47-L53)**: Performs proof-of-work to find valid block hash
 - **[to_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L56-L65)** / **[from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L68-L76)**: Serialization/deserialization methods
 
 ### Wallet Model ([models/wallet.py](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py))
-
 Represents a participant in the blockchain network who can send/receive transactions.
 
-- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initializes a wallet with owner name and initial balance
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L6-L11)**: Initialize wallet with owner name and initial balance
 - **[connect_to_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L13-L33)**: Establishes connection with bootstrap node to get miner list
 - **[select_miner()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L35-L41)**: Randomly selects a miner for transaction processing
-- **[connect_to_miner()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L153-L166)**: Establishes direct connection with a miner
+- **[connect_to_miner()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L43-L52)**: Establishes direct connection with a miner
 - **[update_balance()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L54-L100)**: Queries miner for current wallet balance
 - **[get_balance()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L102-L105)**: Returns current wallet balance
 - **[send_transaction()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L107-L175)**: Sends transaction to another wallet through a miner
 
 ### Miner Model ([models/Miner.py](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py))
-
 Processes transactions, mines blocks, and maintains blockchain state.
 
 - **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initialize miner with network parameters
@@ -107,16 +103,14 @@ Processes transactions, mines blocks, and maintains blockchain state.
 - **[stop()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L318-L335)**: Gracefully shuts down the miner
 
 ### Bootstrap Node ([models/bootstrapNode.py](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py))
-
 Central registry for all miners in the network.
 
-- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initializes bootstrap node with host/port
-- **[start()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L30-L35)**: Starts listening for miner registrations
-- **[handle_client()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L75-L105)**: Processes registration and miner list requests
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L11-L18)**: Initializes bootstrap node with host/port
+- **[start()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L20-L32)**: Starts listening for miner registrations
+- **[handle_client()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L34-L65)**: Processes registration and miner list requests
 - **[receive_json_line()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L67-L80)** / **[send_json_line()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L82-L87)**: JSON communication helpers
 
 ### Test Script ([test_script_v2.py](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py))
-
 Orchestrates the entire blockchain simulation process.
 
 - **[check_stop()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L22-L25)**: Checks if stop signal has been received and raises exception if so
@@ -135,7 +129,6 @@ Orchestrates the entire blockchain simulation process.
 ## 🖥️ Frontend Logger (`blockchain-logger/`)
 
 ### BlockchainLogger Component ([BlockChainLogger.jsx](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx))
-
 Real-time visualization dashboard for blockchain events.
 
 - **State Management**: Manages logs, connection status, and test execution state
@@ -145,12 +138,11 @@ Real-time visualization dashboard for blockchain events.
 - **Test Controls**: Provides buttons to start/stop tests and clear logs
 
 #### Key Functions:
-
-- **`useEffect()`** hooks: Handle WebSocket connection lifecycle
-- **`startTest()`**: Initiates blockchain simulation
-- **`clearLogs()`**: Clears displayed logs
-- **[LogSection](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L89-L153)**: Component for displaying categorized logs
-- **[SectionModal](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L57-L87)**: Modal for viewing complete log sections
+- `useEffect()` hooks: Handle WebSocket connection lifecycle
+- `startTest()`: Initiates blockchain simulation
+- `clearLogs()`: Clears displayed logs
+- [LogSection](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L89-L153): Component for displaying categorized logs
+- [SectionModal](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L57-L87): Modal for viewing complete log sections
 - Auto-scroll functionality: Keeps logs visible as they arrive
 
 ### Log Categories Displayed:
@@ -165,7 +157,6 @@ Real-time visualization dashboard for blockchain events.
 Central Flask server handling WebSocket communications and test orchestration.
 
 ### WebSocketLogger Class
-
 Intercepts standard output and broadcasts log messages to connected clients.
 
 - **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initializes logger with reference to original stdout
@@ -214,13 +205,63 @@ flowchart LR
 4. Applications are deployed to production servers
 5. Services become accessible via provided URLs
 
-### Local Development Setup
-1. Clone the repository
-2. Install Python dependencies: `pip install -r requirements.txt`
-3. Install frontend dependencies: `cd blockchain-logger && npm install`
-4. Run backend server: `python api/index.py`
-5. Run frontend: `cd blockchain-logger && npm start`
-6. Access logger at http://localhost:3000
+## ▶️ Running the Project Locally
+
+You can run this blockchain simulator in several ways for local testing and development:
+
+### Method 1: Comprehensive Test Script (Recommended)
+```bash
+python test_script_v2.py
+```
+This is the most comprehensive testing method that:
+- Starts all components (bootstrap node, miners, wallets)
+- Runs a full simulation with 50 transactions
+- Shows real-time logs and status updates
+- Best for testing the complete system functionality
+
+### Method 2: Simple Test Script
+```bash
+python test_script_v1.py
+```
+A simpler version of the test script with fewer transactions and components.
+
+### Method 3: Main Node Runner
+```bash
+python main.py
+```
+Starts the core blockchain network components without running transactions.
+Useful for checking if basic network connectivity works.
+
+### Method 4: Flask Backend Server
+```bash
+python api/index.py
+```
+Starts the Flask backend server that:
+- Handles WebSocket connections
+- Provides API endpoints
+- Serves as the communication bridge between frontend and blockchain network
+
+### Method 5: Frontend Logger
+To run the frontend logger locally:
+
+1. First, modify the WebSocket URL in the frontend code:
+   - Open [blockchain-logger/src/BlockChainLogger.jsx](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx)
+   - Change the Socket.IO URL to `http://localhost:5400`
+
+2. Then run the frontend:
+```bash
+cd blockchain-logger
+npm start
+```
+
+This starts the React development server and opens the blockchain logger in your browser.
+
+### Prerequisites
+Before running any of the above methods, ensure you have:
+1. Python 3.7+ installed
+2. Required Python packages installed: `pip install -r requirements.txt`
+3. Node.js and npm installed (for frontend)
+4. Frontend dependencies installed: `cd blockchain-logger && npm install`
 
 ## 📊 System Features
 
