@@ -52,76 +52,90 @@ The system consists of several interconnected components:
 ## 🧱 Core Components & Functionality
 
 ### Transaction Model ([models/transaction.py](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py))
+
 Represents a financial transaction in the blockchain network.
 
-- [__init__()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L1-L5): Initializes a transaction with sender, receiver, fees, and amount
-- [tx_to_dict()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L39-L45): Serializes transaction to dictionary format
-- [from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L48-L54): Deserializes transaction from dictionary format
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initializes a transaction with sender, receiver, fees, and amount
+- **[tx_to_dict()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L39-L45)**: Serializes transaction to dictionary format
+- **[from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L68-L76)**: Deserializes transaction from dictionary format
 - Comparison operators: Enable priority queue sorting based on transaction fees
 
 ### Block Model ([models/block.py](file:///Users/apple/Documents/ucd/blockchain/models/block.py))
+
 Represents a block in the blockchain containing multiple transactions.
 
-- [__init__()](file:///Users/apple/Documents/ucd/blockchain/models/transaction.py#L1-L5): Creates a block with transactions and previous block hash
-- [compute_hash()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L15-L24): Calculates SHA256 hash of the block contents
-- [build_merkle_root()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L26-L45): Constructs Merkle tree root from transactions
-- [mine_block()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L47-L53): Performs proof-of-work to find valid block hash
-- [to_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L56-L65) / [from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L68-L76): Serialization/deserialization methods
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Creates a block with transactions and previous block hash
+- **[compute_hash()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L15-L24)**: Calculates SHA256 hash of the block contents
+- **[build_merkle_root()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L26-L45)**: Constructs Merkle tree root from transactions
+- **[mine_block()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L47-L53)**: Performs proof-of-work to find valid block hash
+- **[to_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L56-L65)** / **[from_dict()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L68-L76)**: Serialization/deserialization methods
 
 ### Wallet Model ([models/wallet.py](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py))
+
 Represents a participant in the blockchain network who can send/receive transactions.
 
-- [connect_to_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L13-L33): Establishes connection with bootstrap node to get miner list
-- [select_miner()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L35-L41): Randomly selects a miner for transaction processing
-- [connect_to_miner()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L43-L52): Establishes direct connection with a miner
-- [update_balance()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L54-L100): Queries miner for current wallet balance
-- [get_balance()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L102-L105): Returns current wallet balance
-- [send_transaction()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L107-L175): Sends transaction to another wallet through a miner
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initializes a wallet with owner name and initial balance
+- **[connect_to_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L13-L33)**: Establishes connection with bootstrap node to get miner list
+- **[select_miner()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L35-L41)**: Randomly selects a miner for transaction processing
+- **[connect_to_miner()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L153-L166)**: Establishes direct connection with a miner
+- **[update_balance()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L54-L100)**: Queries miner for current wallet balance
+- **[get_balance()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L102-L105)**: Returns current wallet balance
+- **[send_transaction()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L107-L175)**: Sends transaction to another wallet through a miner
 
 ### Miner Model ([models/Miner.py](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py))
+
 Processes transactions, mines blocks, and maintains blockchain state.
 
-- [__init__()](file:///Users/apple/Documents/ucd/blockchain/models/wallet.py#L6-L11): Initialize miner with network parameters
-- [start()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L30-L35): Starts miner services including server and connection maintenance
-- [auto_mine()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L37-L43): Automatically attempts to mine blocks when enough transactions exist
-- [connect_to_peers()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L46-L60): Establishes connections with other miners
-- [run_server()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L62-L73): Listens for incoming connections from wallets and miners
-- [handle_client()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L75-L105): Processes requests from connected clients
-- [register_to_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L107-L134): Registers with bootstrap node to join network
-- [maintain_miner_connections()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L136-L151): Keeps connections with other miners updated
-- [add_transaction_to_mempool()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L236-L249): Adds new transaction to pending transactions pool
-- [broadcast_transaction()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L251-L257): Shares transaction with all connected miners
-- [produce_block()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L259-L274): Mines a new block from transactions in mempool
-- [add_block_to_chain()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L276-L292): Adds a newly mined block to the blockchain
-- [broadcast_block()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L294-L300): Shares newly mined block with all connected miners
-- [calculate_balance()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L302-L316): Computes wallet balance based on blockchain state
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initialize miner with network parameters
+- **[start()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L30-L35)**: Starts miner services including server and connection maintenance
+- **[auto_mine()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L37-L43)**: Automatically attempts to mine blocks when enough transactions exist
+- **[connect_to_peers()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L46-L60)**: Establishes connections with other miners
+- **[run_server()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L62-L73)**: Listens for incoming connections from wallets and miners
+- **[handle_client()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L75-L105)**: Processes requests from connected clients
+- **[register_to_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L107-L134)**: Registers with bootstrap node to join network
+- **[maintain_miner_connections()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L136-L151)**: Keeps connections with other miners updated
+- **[connect_to_miner()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L153-L166)**: Establishes connection with a specific miner
+- **[get_miners_from_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L168-L173)**: Retrieves current list of miners from bootstrap node
+- **[handle_wallet()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L175-L202)**: Handles communication with wallet clients
+- **[handle_miner()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L204-L234)**: Handles communication with other miners
+- **[add_transaction_to_mempool()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L236-L249)**: Adds new transaction to pending transactions pool
+- **[broadcast_transaction()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L251-L257)**: Shares transaction with all connected miners
+- **[produce_block()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L259-L274)**: Mines a new block from transactions in mempool
+- **[add_block_to_chain()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L276-L292)**: Adds a newly mined block to the blockchain
+- **[broadcast_block()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L294-L300)**: Shares newly mined block with all connected miners
+- **[calculate_balance()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L302-L316)**: Computes wallet balance based on blockchain state
+- **[stop()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L318-L335)**: Gracefully shuts down the miner
 
 ### Bootstrap Node ([models/bootstrapNode.py](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py))
+
 Central registry for all miners in the network.
 
-- [__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28): Initializes bootstrap node with host/port
-- [start()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L30-L35): Starts listening for miner registrations
-- [handle_client()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L75-L105): Processes registration and miner list requests
-- [receive_json_line()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L67-L80) / [send_json_line()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L82-L87): JSON communication helpers
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initializes bootstrap node with host/port
+- **[start()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L30-L35)**: Starts listening for miner registrations
+- **[handle_client()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L75-L105)**: Processes registration and miner list requests
+- **[receive_json_line()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L67-L80)** / **[send_json_line()](file:///Users/apple/Documents/ucd/blockchain/models/bootstrapNode.py#L82-L87)**: JSON communication helpers
 
 ### Test Script ([test_script_v2.py](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py))
+
 Orchestrates the entire blockchain simulation process.
 
-- [start_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/main.py#L7-L11): Initializes and starts bootstrap node
-- [start_miners()](file:///Users/apple/Documents/ucd/blockchain/main.py#L13-L20): Creates and starts multiple miners
-- [setup_wallets()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L57-L69): Creates wallets and connects them to the network
-- [simulate_transactions()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L72-L97): Generates transactions between wallets
-- [print_mempools()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L100-L106): Displays current transaction pools of all miners
-- [print_blockchains()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L109-L114): Shows current state of all miner blockchains
-- [mine_block()](file:///Users/apple/Documents/ucd/blockchain/models/block.py#L47-L53): Triggers manual block mining process
-- [update_wallet_balances()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L139-L149): Updates and displays final wallet balances
-- [shutdown()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L152-L167): Gracefully stops all components
-- [test_blockchain()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L170-L210): Main orchestrator function that runs the full simulation
-- [stop_test()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L214-L217): Stops ongoing test execution
+- **[check_stop()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L22-L25)**: Checks if stop signal has been received and raises exception if so
+- **[start_bootstrap()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L28-L34)**: Initializes and starts bootstrap node
+- **[start_miners()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L37-L54)**: Creates and starts multiple miners
+- **[setup_wallets()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L57-L69)**: Creates wallets and connects them to the network
+- **[simulate_transactions()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L72-L97)**: Generates transactions between wallets
+- **[print_mempools()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L100-L106)**: Displays current transaction pools of all miners
+- **[print_blockchains()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L109-L114)**: Shows current state of all miner blockchains
+- **[mine_block()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L117-L136)**: Triggers manual block mining process
+- **[update_wallet_balances()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L139-L149)**: Updates and displays final wallet balances
+- **[shutdown()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L152-L167)**: Gracefully stops all components
+- **[test_blockchain()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L170-L210)**: Main orchestrator function that runs the full simulation
+- **[stop_test()](file:///Users/apple/Documents/ucd/blockchain/test_script_v2.py#L214-L217)**: Stops ongoing test execution
 
 ## 🖥️ Frontend Logger (`blockchain-logger/`)
 
 ### BlockchainLogger Component ([BlockChainLogger.jsx](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx))
+
 Real-time visualization dashboard for blockchain events.
 
 - **State Management**: Manages logs, connection status, and test execution state
@@ -131,11 +145,12 @@ Real-time visualization dashboard for blockchain events.
 - **Test Controls**: Provides buttons to start/stop tests and clear logs
 
 #### Key Functions:
-- `useEffect()` hooks: Handle WebSocket connection lifecycle
-- `startTest()`: Initiates blockchain simulation
-- `clearLogs()`: Clears displayed logs
-- [LogSection](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L89-L153): Component for displaying categorized logs
-- [SectionModal](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L57-L87): Modal for viewing complete log sections
+
+- **`useEffect()`** hooks: Handle WebSocket connection lifecycle
+- **`startTest()`**: Initiates blockchain simulation
+- **`clearLogs()`**: Clears displayed logs
+- **[LogSection](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L89-L153)**: Component for displaying categorized logs
+- **[SectionModal](file:///Users/apple/Documents/ucd/blockchain/blockchain-logger/src/BlockChainLogger.jsx#L57-L87)**: Modal for viewing complete log sections
 - Auto-scroll functionality: Keeps logs visible as they arrive
 
 ### Log Categories Displayed:
@@ -150,29 +165,33 @@ Real-time visualization dashboard for blockchain events.
 Central Flask server handling WebSocket communications and test orchestration.
 
 ### WebSocketLogger Class
+
 Intercepts standard output and broadcasts log messages to connected clients.
 
-- [write()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L22-L32): Captures print statements and emits them via WebSocket
-- [flush()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L34-L35): Ensures immediate delivery of log messages
-- [close()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L37-L38): Restores normal stdout behavior
+- **[__init__()](file:///Users/apple/Documents/ucd/blockchain/models/Miner.py#L12-L28)**: Initializes logger with reference to original stdout
+- **[write()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L22-L32)**: Captures print statements and emits them via WebSocket
+- **[flush()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L34-L35)**: Ensures immediate delivery of log messages
+- **[close()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L37-L38)**: Restores normal stdout behavior
 
 ### API Endpoints:
-- [/](file:///Users/apple/Documents/ucd/blockchain/api/index.py): Health check endpoint returning simple confirmation
-- `/health`: Status endpoint indicating server is operational
+- **[home()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L56-L57)**: Health check endpoint returning simple confirmation
+- **[health()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L110-L111)**: Status endpoint indicating server is operational
 
 ### WebSocket Event Handlers:
-- [handle_connect()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L60-L62): Manages new client connections
-- [handle_disconnect()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L65-L66): Handles client disconnections
-- [handle_start_test()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L69-L90): Initiates blockchain simulation
-- [handle_stop_test()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L93-L107): Stops ongoing blockchain simulation
+- **[handle_connect()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L60-L62)**: Manages new client connections
+- **[handle_disconnect()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L65-L66)**: Handles client disconnections
+- **[handle_start_test()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L69-L90)**: Initiates blockchain simulation
+- **[handle_stop_test()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L93-L107)**: Stops ongoing blockchain simulation
+- **[start_logging()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L42-L47)**: Starts capturing print statements for broadcasting
+- **[stop_logging()](file:///Users/apple/Documents/ucd/blockchain/api/index.py#L49-L53)**: Stops logging and restores stdout
 
 ## 🛠️ Constants ([utils/constants.py](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py))
 
 Configuration values used throughout the system:
-- [TRANS_PER_BLOCK](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L0-L0): Number of transactions per block (4)
-- [QUEUED_CONNECTION](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L1-L1): Maximum queued connections (20)
-- [MINER_PORT](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L2-L2): List of ports for miner instances ([6001, 6002, 6003, 6004])
-- [MINING_DIFFICULTY](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L3-L3): Proof-of-work difficulty level (2 leading zeros)
+- **[TRANS_PER_BLOCK](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L0-L0)**: Number of transactions per block (4)
+- **[QUEUED_CONNECTION](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L1-L1)**: Maximum queued connections (20)
+- **[MINER_PORT](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L2-L2)**: List of ports for miner instances ([6001, 6002, 6003, 6004])
+- **[MINING_DIFFICULTY](file:///Users/apple/Documents/ucd/blockchain/utils/constants.py#L3-L3)**: Proof-of-work difficulty level (2 leading zeros)
 
 ## 🚀 Development & Deployment Workflow
 
@@ -207,7 +226,6 @@ flowchart LR
 
 ### Real-time Monitoring
 - Live log streaming from all blockchain components
-- Color-coded log categories for easy identification
 - Interactive log inspection capabilities
 
 ### Blockchain Simulation
